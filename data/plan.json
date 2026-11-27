@@ -1238,7 +1238,7 @@
     17.311,
     9.51
    ],
-   "kind": "double_glass",
+   "kind": "lattice",
    "room": "LOBBY"
   },
   {
@@ -2182,7 +2182,7 @@
     ]
    ],
    "floor": "oak",
-   "ceiling": "louver"
+   "ceiling": "flat"
   }
  ],
  "furniture": [
@@ -3599,40 +3599,32 @@
    ]
   },
   {
-   "type": "tall_cabinet",
+   "type": "locker_wall",
    "pos": [
-    12.212,
-    5.139
+    12.199,
+    5.801
    ],
    "rot": 0,
-   "room": "CORR",
+   "room": "OPEN",
    "size": [
-    3.2,
+    4.45,
     0.04,
-    2.45
-   ]
-  },
-  {
-   "type": "hydrant",
-   "pos": [
-    12.212,
-    7.523
+    2.5
    ],
-   "rot": 0,
-   "room": "CORR"
+   "cols": 12
   },
   {
    "type": "shelf_niche",
    "pos": [
-    12.609,
-    9.47
+    17.695,
+    8.821
    ],
-   "rot": 270,
+   "rot": 180,
    "room": "CORR",
    "size": [
     0.06,
-    1.0,
-    1.4
+    1.05,
+    1.5
    ]
   },
   {

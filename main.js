@@ -4,15 +4,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { PathWalker } from './people.js?v=20261127145035';
-import { createCharacter, Actor } from './characters.js?v=20261127145035';
+import { PathWalker } from './people.js?v=20261127154138';
+import { createCharacter, Actor } from './characters.js?v=20261127154138';
+import { NavGrid } from './nav.js?v=20261127154138';
 
 const $ = (s) => document.querySelector(s);
 const state = { mode: 'guide', ready: false, follow: null, flying: null, showNames: true };
 
 // ------------------------------------------------------------------ renderer / scene
 const canvas = $('#c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+// logarithmicDepthBuffer: 먼 도시와 가까운 실내를 함께 볼 때 면이 겹쳐 깜빡이는 현상 방지
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.AgXToneMapping;
@@ -23,7 +25,7 @@ labelRenderer.domElement.className = 'labels';
 document.body.appendChild(labelRenderer.domElement);
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 3000);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2500);
 const controls = new OrbitControls(camera, labelRenderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
@@ -83,14 +85,14 @@ const texLoader = new THREE.TextureLoader();
 
 const fetchJSON = (u) => fetch(u).then((r) => r.json());
 const [plan, people, lmMeta, cityMeta, profiles] = await Promise.all([
-  fetchJSON('./data/plan.json?v=20261127145035'), fetchJSON('./data/people.json?v=20261127145035'),
-  fetchJSON('./assets/lightmaps.json?v=20261127145035'), fetchJSON('./assets/city.json?v=20261127145035'),
-  fetchJSON('./data/profiles.json?v=20261127145035').catch(() => ({})),
+  fetchJSON('./data/plan.json?v=20261127154138'), fetchJSON('./data/people.json?v=20261127154138'),
+  fetchJSON('./assets/lightmaps.json?v=20261127154138'), fetchJSON('./assets/city.json?v=20261127154138'),
+  fetchJSON('./data/profiles.json?v=20261127154138').catch(() => ({})),
 ]);
 
 const pmrem = new THREE.PMREMGenerator(renderer);
 const roomEnv = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-const hdr = await texLoader.loadAsync('./assets/sky.jpg?v=20261127145035');
+const hdr = await texLoader.loadAsync('./assets/sky.jpg?v=20261127154138');
 hdr.colorSpace = THREE.SRGBColorSpace;
 hdr.mapping = THREE.EquirectangularReflectionMapping;
 const skyEnv = pmrem.fromEquirectangular(hdr).texture;
@@ -101,15 +103,15 @@ scene.environmentRotation.y = THREE.MathUtils.degToRad(-130);
 setProgress(0.15);
 
 const [office, city] = await Promise.all([
-  loader.loadAsync('./assets/office.glb?v=20261127145035', (e) => e.total && setProgress(0.15 + 0.6 * (e.loaded / e.total))),
-  loader.loadAsync('./assets/city.glb?v=20261127145035'),
+  loader.loadAsync('./assets/office.glb?v=20261127154138', (e) => e.total && setProgress(0.15 + 0.6 * (e.loaded / e.total))),
+  loader.loadAsync('./assets/city.glb?v=20261127154138'),
 ]);
 setProgress(0.8);
 
 // 라이트맵
 const lmTex = {};
 await Promise.all(lmMeta.maps.map(async (name) => {
-  const t = await texLoader.loadAsync(`./assets/lm/${name}.jpg?v=20261127145035`);
+  const t = await texLoader.loadAsync(`./assets/lm/${name}.jpg?v=20261127154138`);
   t.flipY = false;
   t.colorSpace = THREE.SRGBColorSpace;
   t.channel = 1;
@@ -132,7 +134,8 @@ office.scene.traverse((o) => {
   if (!o.isMesh) return;
   const top = topName(o);
   if (top.startsWith('CEIL_')) ceilings.push(o);
-  if (glassMats[top]) { o.material = glassMats[top]; o.renderOrder = 2; return; }
+  // 반투명 유리는 종류별로 그리는 순서를 고정(시점을 돌릴 때 순서가 바뀌며 번쩍이는 현상 방지)
+  if (glassMats[top]) { o.material = glassMats[top]; o.renderOrder = { GL_window: 1, GL_clear: 2, GL_frosted: 3 }[top]; return; }
   const lm = lmOf(o);
   const m = o.material.clone();
   if (lm) {
@@ -154,6 +157,7 @@ city.scene.traverse((o) => {
   if (!o.isMesh) return;
   if (o.name.startsWith('OUR_upper') || o.parent?.name === 'OUR_upper') {
     o.material = new THREE.MeshPhysicalMaterial({ color: 0x9fb6c4, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.28, depthWrite: false, envMapIntensity: 1.2 });
+    o.renderOrder = 5;
     ourUpper.push(o);
   } else if (o.name.startsWith('OUR_slab_top') || o.parent?.name === 'OUR_slab_top') {
     ceilings.push(o);
@@ -222,7 +226,7 @@ const blobTex = (() => {
   g.fillRect(0, 0, 128, 128);
   return new THREE.CanvasTexture(cv);
 })();
-const blobMat = new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false });
+const blobMat = new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
 function addBlob(p, size) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), blobMat);
   m.rotation.x = -Math.PI / 2;
@@ -272,6 +276,8 @@ function roomNameOf(per) {
   return r ? r.name : '';
 }
 function showCard(name, where) {
+  state.cardPerson = persons.find((x) => x.name === name) || null;
+  $('#card .drive').hidden = !state.cardPerson;
   const pr = profiles[name];
   const card = $('#card');
   card.querySelector('.photo').innerHTML = pr?.photo
@@ -284,6 +290,139 @@ function showCard(name, where) {
   card.hidden = false;
 }
 $('#card .close').onclick = () => { $('#card').hidden = true; };
+
+// ------------------------------------------------------------------ 조종(내 화면에서만)
+const nav = new NavGrid(plan);
+const ctrl = { per: null, keys: new Set() };
+const NAV_SPEED = 1.25;
+const planOf = (per) => [per.obj.position.x, per.obj.position.z];
+function face(per, dx, dy) { if (Math.hypot(dx, dy) > 1e-4) per.obj.rotation.y = Math.atan2(-dy, dx); }
+function goTo(per, xy, onArrive) {
+  const path = nav.find(planOf(per), xy);
+  if (!path) return false;
+  per.nav = { path, idx: 1, onArrive };
+  if (per.actor.mode !== 'walk') per.actor.setMode('walk');
+  return true;
+}
+function standUp(per) {
+  if (per.actor.mode === 'sit') {
+    const f = nav.nearestFree(...planOf(per), 1.5);
+    if (f) per.obj.position.set(f[0], 0, f[1]);
+  }
+  per.actor.setMode('stand');
+}
+function returnHome(per) {
+  per.controlled = false;
+  if (per.seat) {
+    const ok = goTo(per, per.seat.pos, () => {
+      per.obj.position.copy(P(per.seat.pos[0], per.seat.pos[1]));
+      per.obj.rotation.y = -THREE.MathUtils.degToRad(per.seat.face);
+      per.actor.setMode('sit');
+    });
+    if (!ok) { per.obj.position.copy(P(per.seat.pos[0], per.seat.pos[1])); per.actor.setMode('sit'); }
+  } else if (per.walker) {
+    const ok = goTo(per, [per.walker.pos.x, per.walker.pos.z], () => { per.actor.setMode('walk'); });
+    if (!ok) per.actor.setMode('walk');
+  }
+}
+function startControl(per) {
+  if (ctrl.per && ctrl.per !== per) returnHome(ctrl.per);
+  ctrl.per = per;
+  per.controlled = true;
+  per.nav = null;
+  state.follow = null;
+  standUp(per);
+  $('#ctrl-name').textContent = per.name;
+  $('#ctrlbar').hidden = false;
+  $('#card').hidden = true;
+  const w = per.obj.position;
+  flyTo(new THREE.Vector3(w.x + 2.2, 5.6, w.z + 4.2), new THREE.Vector3(w.x, 0.6, w.z), 1.0);
+}
+function endControl() {
+  if (!ctrl.per) return;
+  returnHome(ctrl.per);
+  ctrl.per = null;
+  $('#ctrlbar').hidden = true;
+}
+$('#card .drive').onclick = () => { if (state.cardPerson) startControl(state.cardPerson); };
+$('#ctrlbar').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-act]');
+  if (!b || !ctrl.per) return;
+  const per = ctrl.per, act = b.dataset.act;
+  if (act === 'end') return endControl();
+  if (act === 'home') { endControl(); return; }
+  per.nav = null;
+  per.actor.setMode('stand');
+  per.actor.doEmote(act);
+});
+const isTyping = () => document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
+window.addEventListener('keydown', (e) => {
+  if (!ctrl.per || isTyping()) return;
+  const k = e.key.toLowerCase();
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(k)) { ctrl.keys.add(k); e.preventDefault(); }
+  if (k === 'escape') endControl();
+});
+window.addEventListener('keyup', (e) => ctrl.keys.delete(e.key.toLowerCase()));
+const camFwd = new THREE.Vector3();
+function updateNav(per, dt) {
+  const before = per.obj.position.clone();
+  let moving = false;
+  if (per === ctrl.per && ctrl.keys.size) {
+    camera.getWorldDirection(camFwd);
+    camFwd.y = 0; camFwd.normalize();
+    const right = new THREE.Vector3(-camFwd.z, 0, camFwd.x);
+    const k = ctrl.keys;
+    const f = (k.has('w') || k.has('arrowup') ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0);
+    const r = (k.has('d') || k.has('arrowright') ? 1 : 0) - (k.has('a') || k.has('arrowleft') ? 1 : 0);
+    const mv = camFwd.clone().multiplyScalar(f).add(right.multiplyScalar(r));
+    if (mv.lengthSq() > 0) {
+      per.nav = null;
+      mv.normalize().multiplyScalar(NAV_SPEED * 1.15 * dt);
+      const nx = per.obj.position.x + mv.x, nz = per.obj.position.z + mv.z;
+      if (nav.isFree(nx, nz)) per.obj.position.set(nx, 0, nz);
+      else if (nav.isFree(nx, per.obj.position.z)) per.obj.position.x = nx;
+      else if (nav.isFree(per.obj.position.x, nz)) per.obj.position.z = nz;
+      face(per, mv.x, mv.z);
+      moving = true;
+    }
+  }
+  if (!moving && per.nav) {
+    const n = per.nav, tgt = n.path[n.idx];
+    const dx = tgt[0] - per.obj.position.x, dy = tgt[1] - per.obj.position.z;
+    const d = Math.hypot(dx, dy), step = NAV_SPEED * dt;
+    if (d <= step) {
+      per.obj.position.set(tgt[0], 0, tgt[1]);
+      n.idx++;
+      if (n.idx >= n.path.length) {
+        per.nav = null;
+        if (n.onArrive) n.onArrive(); else per.actor.setMode('stand');
+      }
+    } else {
+      per.obj.position.x += (dx / d) * step;
+      per.obj.position.z += (dy / d) * step;
+      face(per, dx, dy);
+    }
+    moving = !!per.nav;
+  }
+  if (moving && per.actor.mode !== 'walk') per.actor.setMode('walk');
+  if (!moving && per === ctrl.per && per.actor.mode === 'walk') per.actor.setMode('stand');
+  per.phase = (per.phase || 0) + dt * NAV_SPEED * 6.5;
+  per.actor.update(dt, per.phase);
+  // 말풍선(응원하기 → "화이팅!")
+  if (per.actor.bubble && !per.bubbleTag) {
+    per.bubbleTag = label('', 'bubble', new THREE.Vector3(0, 1.88, 0));
+    per.obj.add(per.bubbleTag);
+  }
+  if (per.bubbleTag) {
+    per.bubbleTag.visible = !!per.actor.bubble;
+    if (per.actor.bubble) per.bubbleTag.element.textContent = per.actor.bubble;
+  }
+  if (per === ctrl.per) {   // 카메라가 같은 거리로 따라감
+    const delta = per.obj.position.clone().sub(before);
+    camera.position.add(delta);
+    controls.target.add(delta);
+  }
+}
 
 // ------------------------------------------------------------------ views
 const outline = plan.outline;
@@ -316,6 +455,11 @@ function roomAt(ev) {
   return rooms.find((r) => !r.id.startsWith('CORR') && inPoly(pt, r.poly)) || null;
 }
 const tip = $('#tip');
+const marker = new THREE.Mesh(new THREE.RingGeometry(0.14, 0.2, 32), new THREE.MeshBasicMaterial({ color: 0x1b365d, transparent: true, opacity: 0.85, depthWrite: false }));
+marker.rotation.x = -Math.PI / 2;
+marker.visible = false;
+scene.add(marker);
+function showMarker(p) { marker.position.set(p.x, 0.02, p.z); marker.visible = true; marker.userData.t = 1.2; }
 let down = null;
 labelRenderer.domElement.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY]; });
 labelRenderer.domElement.addEventListener('pointermove', (e) => {
@@ -335,6 +479,15 @@ labelRenderer.domElement.addEventListener('pointerup', (e) => {
     const hit = ray.intersectObjects(charMeshes, false)[0];
     const per = hit?.object.userData.charRoot?.userData.person;
     if (per) { focusPerson(per); return; }
+  }
+  if (ctrl.per) {
+    ptr.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+    ray.setFromCamera(ptr, camera);
+    const hp = new THREE.Vector3();
+    if (ray.ray.intersectPlane(floorPlane, hp)) {
+      if (goTo(ctrl.per, [hp.x, hp.z], null)) showMarker(hp);
+    }
+    return;
   }
   const r = roomAt(e);
   if (!r) return;
@@ -414,7 +567,9 @@ function tick() {
     controls.target.lerpVectors(f.t0, f.t1, k);
     if (f.t >= 1) state.flying = null;
   }
+  if (marker.visible) { marker.userData.t -= dt; marker.material.opacity = Math.max(0, marker.userData.t) * 0.7; if (marker.userData.t <= 0) marker.visible = false; }
   for (const p of persons) {
+    if (p.controlled || p.nav) { updateNav(p, dt); continue; }
     if (!p.walker) { p.actor.update(dt); continue; }
     p.walker.update(dt);
     p.phase += dt * p.walker.speed * 6.5;
@@ -458,4 +613,4 @@ state.intro = true;
 $('#loading').classList.add('done');
 tick();
 setTimeout(() => { flyTo(VIEW_DOLL.pos, VIEW_DOLL.target, 4.5); setTimeout(() => { state.intro = false; }, 3800); }, 600);
-window.__office = { scene, camera, controls, flyTo, setMode, persons, P };
+window.__office = { scene, camera, controls, flyTo, setMode, persons, P, startControl, endControl, goTo, nav };

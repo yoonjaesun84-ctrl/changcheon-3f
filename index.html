@@ -94,6 +94,23 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #cfd8de; col
 .lbl.person b { display: grid; place-items: center; min-width: 17px; height: 17px; padding: 0 3px; border-radius: 9px; background: #fff; color: var(--navy); font-size: 10.5px; }
 .lbl.person.empty { background: rgba(90, 101, 119, .85); }
 
+.profile .drive { margin-top: 10px; border: 0; background: var(--navy); color: #fff; font: inherit; font-size: 12px; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; }
+.ctrl { left: 50%; transform: translateX(-50%); bottom: 22px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; align-items: center; max-width: calc(100vw - 24px); }
+.ctrl[hidden] { display: none; }
+.ctrl .who { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: baseline; }
+.ctrl .who b { font-size: 15px; color: var(--navy); }
+.ctrl .acts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.ctrl .acts button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 13px; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.ctrl .acts button:hover { border-color: var(--navy); }
+.ctrl .acts .end { background: var(--navy); color: #fff; border-color: var(--navy); }
+.ctrl .hint { font-size: 11px; color: var(--muted); text-align: center; }
+
+.ctrl .acts .praise { border-color: #f3a6b4; color: #c8324e; background: #fff5f7; }
+
+.lbl.bubble { background: #fff; color: #c8324e; font-size: 15px; font-weight: 800; padding: 6px 12px; border-radius: 14px; border: 2px solid #f3a6b4; box-shadow: 0 6px 16px -8px rgba(0, 0, 0, .45); animation: pop .35s ease-out; }
+@keyframes pop { from { transform: translateY(-4px) scale(.6); } to { transform: translateY(-4px) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .lbl.bubble { animation: none; } }
+
 </style>
 <script type="importmap">
 { "imports": {
@@ -134,11 +151,24 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #cfd8de; col
     <div class="title"></div>
     <div class="fields"></div>
     <div class="where"></div>
+    <button class="drive" hidden>조종하기</button>
   </div>
 </aside>
+<div id="ctrlbar" class="card ctrl" hidden>
+  <div class="who"><span>조종 중</span><b id="ctrl-name"></b></div>
+  <div class="acts">
+    <button data-act="wave">손 흔들기</button>
+    <button data-act="bow">인사하기</button>
+    <button data-act="coffee">커피 마시기</button>
+    <button data-act="praise" class="praise">응원하기</button>
+    <button data-act="home">자리로</button>
+    <button data-act="end" class="end">조종 끝</button>
+  </div>
+  <div class="hint">바닥을 누르면 그곳으로 걸어갑니다 · 방향키나 W·A·S·D로 걷기 · Esc로 끝내기</div>
+</div>
 <footer class="credit">주변 건물 © OpenStreetMap contributors</footer>
 
 <div id="loading"><div class="box"><b>3D 사무실 불러오는 중</b><div class="bar"><i></i></div></div></div>
-<script type="module" src="./main.js?v=20261127145035"></script>
+<script type="module" src="./main.js?v=20261127154138"></script>
 </body>
 </html>

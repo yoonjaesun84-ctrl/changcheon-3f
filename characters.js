@@ -137,6 +137,34 @@ export function createCharacter(look = {}) {
   mouth.rotation.set(0, Math.PI / 2, Math.PI);
   mouth.position.set(0.158, -0.052, 0);
   head.add(mouth);
+  // 칭찬받았을 때: 새빨간 볼, ^ ^ 눈, /// 홍조선, 오물오물 입
+  const shy = new THREE.Group();
+  shy.visible = false;
+  head.add(shy);
+  const blushM = new THREE.MeshBasicMaterial({ color: '#ff5f7a', transparent: true, opacity: 0.85, depthWrite: false });
+  const lineM = new THREE.MeshBasicMaterial({ color: '#b3122f' });
+  for (const z of [-1, 1]) {
+    const bl = sphere(0.04, blushM, 16, 10);
+    bl.scale.set(0.25, 0.55, 1.1);
+    bl.position.set(0.146, -0.035, z * 0.088);
+    shy.add(bl);
+    for (let k = 0; k < 3; k++) {
+      const ln = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.032, 0.005), lineM);
+      ln.position.set(0.164, -0.03, z * 0.088 + (k - 1) * 0.017);
+      ln.rotation.x = -0.5;
+      shy.add(ln);
+    }
+    const arc = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.005, 6, 14, Math.PI), mat('#1b1b1f', 0.3));
+    arc.rotation.set(0, Math.PI / 2, 0);
+    arc.position.set(0.157, 0.0, z * 0.056);
+    shy.add(arc);
+  }
+  const wavy = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.0045, 6, 12, Math.PI), mat('#8c4a44', 0.6));
+  wavy.rotation.set(0, Math.PI / 2, Math.PI);
+  wavy.position.set(0.159, -0.058, 0);
+  shy.add(wavy);
+  const normalFace = [];
+  head.children.forEach((c) => { if (c !== skull && c !== shy) normalFace.push(c); });
   buildHair(head, look);
   buildGlasses(head, look.glasses);
 
@@ -200,7 +228,22 @@ export function createCharacter(look = {}) {
   L.hand.add(props.folder);
   for (const p of Object.values(props)) p.visible = false;
 
-  root.userData.rig = { pelvis, spine, head, L, R, LL, LR, props };
+  // 하트(칭찬받았을 때 머리 위로)
+  const heartShape = new THREE.Shape();
+  heartShape.moveTo(0, 0.025);
+  heartShape.bezierCurveTo(0, 0.05, 0.05, 0.05, 0.05, 0.02);
+  heartShape.bezierCurveTo(0.05, -0.005, 0.02, -0.025, 0, -0.045);
+  heartShape.bezierCurveTo(-0.02, -0.025, -0.05, -0.005, -0.05, 0.02);
+  heartShape.bezierCurveTo(-0.05, 0.05, 0, 0.05, 0, 0.025);
+  const heartGeo = new THREE.ShapeGeometry(heartShape);
+  const hearts = [];
+  for (let k = 0; k < 3; k++) {
+    const h = new THREE.Mesh(heartGeo, new THREE.MeshBasicMaterial({ color: '#ff4d6d', transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+    h.visible = false;
+    root.add(h);
+    hearts.push(h);
+  }
+  root.userData.rig = { pelvis, spine, head, L, R, LL, LR, props, shy, normalFace, hearts };
   root.traverse((o) => { if (o.isMesh) o.userData.charRoot = root; });
   return root;
 }
@@ -303,8 +346,26 @@ export class Actor {
     }
     this.applyProps();
   }
+  setMode(mode) {
+    this.mode = mode;
+    if (mode === 'sit') {
+      this.rig.pelvis.position.set(-0.045, 0.5 / S, 0);
+      this.action = pick(this.rng);
+      this.left = 3 + this.rng() * 6;
+    } else {
+      this.rig.pelvis.position.set(0, 0.385, 0);
+    }
+    this.emote = null;
+    this.applyProps();
+  }
+  doEmote(name) {
+    this.emote = name;
+    this.emoteT = 0;
+    this.applyProps();
+  }
   applyProps() {
-    const want = this.mode === 'sit' ? SIT_ACTIONS[this.action].props : (this.carry ? [this.carry] : []);
+    let want = this.mode === 'sit' ? SIT_ACTIONS[this.action].props : (this.carry ? [this.carry] : []);
+    if (this.mode !== 'sit' && this.emote === 'coffee') want = ['cup'];
     for (const [k, m] of Object.entries(this.rig.props)) m.visible = want.includes(k);
   }
   update(dt, walkPhase = 0) {
@@ -319,6 +380,53 @@ export class Actor {
       }
       sitBase(target);
       SIT_ACTIONS[this.action].pose(target, this.t);
+    } else if (this.mode === 'stand') {
+      this.rig.pelvis.position.set(0, 0.385, 0);
+      target.shL = [0.1, 0, 0.04]; target.shR = [-0.1, 0, 0.04];
+      target.elL = [0, 0, 0.15]; target.elR = [0, 0, 0.15];
+      target.head = [0, 0.08 * Math.sin(this.t * 0.6), 0];
+      target.knL = [0, 0, -0.04]; target.knR = [0, 0, -0.04];
+      if (this.emote) {
+        this.emoteT += dt;
+        const t = this.emoteT;
+        if (this.emote === 'wave') {
+          target.shR = [-0.35 - 0.3 * Math.sin(t * 9), 0, 2.55]; target.elR = [0, 0, 0.35];
+          target.head = [0.1, 0, 0.05];
+        } else if (this.emote === 'bow') {
+          const k = Math.sin(Math.min(1, t / 2.2) * Math.PI);
+          target.spine = [0, 0, -0.75 * k]; target.head = [0, 0, -0.3 * k];
+          target.shL = [0.05, 0, 0.25 * k]; target.shR = [-0.05, 0, 0.25 * k];
+          target.hipL = [0, 0, 0.15 * k]; target.hipR = [0, 0, 0.15 * k];
+        } else if (this.emote === 'cheer') {
+          const b = Math.abs(Math.sin(t * 6));
+          target.shL = [0.35, 0, 2.7 + 0.2 * b]; target.shR = [-0.35, 0, 2.7 + 0.2 * b];
+          target.elL = [0, 0, 0.2]; target.elR = [0, 0, 0.2];
+          this.rig.pelvis.position.y = 0.385 + 0.06 * b;
+          target.head = [0, 0, 0.15];
+        } else if (this.emote === 'praise' && t > 2.3) {
+          // 응원받고 힘내기: 오른 주먹을 위로 불끈불끈, 왼 주먹은 가슴 앞
+          const pump = Math.abs(Math.sin((t - 2.3) * 6.5));
+          target.shR = [-0.25, 0, 2.25 + 0.4 * pump]; target.elR = [0, 0, 0.9 - 0.5 * pump];
+          target.shL = [-0.35, 0, 0.95]; target.elL = [0, 0, 2.1];
+          target.head = [0, 0, 0.2];
+          target.spine = [0, 0, 0.06];
+          this.rig.pelvis.position.y = 0.385 + 0.05 * pump;
+        } else if (this.emote === 'praise') {
+          // 두 손으로 볼 감싸고, 고개 숙이고, 몸을 배배 꼼
+          const w = Math.sin(t * 4.5);
+          target.shL = [-0.55, 0, 1.25]; target.shR = [0.55, 0, 1.25];
+          target.elL = [0, 0, 2.2]; target.elR = [0, 0, 2.2];
+          target.head = [0.18 * w, 0.15 * w, -0.16];
+          target.spine = [0.08 * w, 0.28 * w, -0.06];
+          target.hipL = [0, 0, 0.05 * Math.max(0, w)]; target.hipR = [0, 0, 0.05 * Math.max(0, -w)];
+          this.rig.pelvis.position.y = 0.385 + 0.012 * Math.abs(Math.sin(t * 9));
+        } else if (this.emote === 'coffee') {
+          const k = Math.max(0, Math.sin(t * 1.1)) ** 2;
+          target.shR = [-0.05, 0, 0.55 + 0.5 * k]; target.elR = [0, 0, 1.3 + 1.0 * k];
+          target.head = [0, 0, 0.12 * k];
+        }
+        if (this.emote !== 'coffee' && t > ({ bow: 2.3, praise: 5.4 }[this.emote] ?? 2.8)) { this.emote = null; this.applyProps(); }
+      }
     } else {
       const s = Math.sin(walkPhase);
       this.rig.pelvis.position.set(0, 0.385 + Math.abs(Math.cos(walkPhase)) * 0.018, 0);
@@ -340,7 +448,30 @@ export class Actor {
       const o = jointObj(this.rig, j);
       o.rotation.set(c[0], c[1], c[2]);
     }
+    const cup = this.rig.props.cup;
+    if (cup.visible) {   // 손이 어느 방향이든 컵은 똑바로(살짝 입쪽으로 기울임)
+      cup.parent.updateWorldMatrix(true, false);
+      cup.parent.getWorldQuaternion(_q).invert();
+      cup.quaternion.copy(_q);
+    }
+    // 칭찬 반응: 표정·하트
+    const shyOn = this.emote === 'praise' && (this.emoteT || 0) <= 2.3;
+    this.bubble = this.emote === 'praise' && (this.emoteT || 0) > 2.3 ? '화이팅!' : null;
+    if (this.rig.shy.visible !== shyOn) {
+      this.rig.shy.visible = shyOn;
+      for (const c of this.rig.normalFace) c.visible = !shyOn;
+    }
+    this.rig.hearts.forEach((h, i) => {
+      if (!shyOn) { h.visible = false; return; }
+      const ph = ((this.emoteT || 0) * 0.55 + i / 3) % 1;
+      h.visible = true;
+      h.position.set(0.05 * Math.sin(ph * 9 + i), 1.5 + ph * 0.55, (i - 1) * 0.16);
+      h.rotation.set(0, Math.PI / 2, 0);
+      h.scale.setScalar(0.8 + ph * 0.7);
+      h.material.opacity = Math.sin(ph * Math.PI);
+    });
   }
 }
 
 export const CHAR_SCALE = S;
+const _q = new THREE.Quaternion();
