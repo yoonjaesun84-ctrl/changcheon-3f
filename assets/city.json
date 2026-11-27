@@ -1,0 +1,11 @@
+{
+ "ground": -8.0,
+ "plan_center": [
+  11.743000030517578,
+  -6.712600231170654
+ ],
+ "bearing_x": 160.3,
+ "buildings": 614,
+ "our_height": 41.0,
+ "attribution": "© OpenStreetMap contributors (ODbL)"
+}

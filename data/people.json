@@ -1,0 +1,37 @@
+{
+ "_설명": "자리·외형 목록. seat 값은 data/plan.json 의 seats[].id. look: hair(short|quiff|side|long|bob), hairColor, glasses(round|rect|thick|없음), suit(정장 색, 없으면 사무복), tie(넥타이 색), inner(shirt|blouse|knit), innerColor. 변호사님 외형은 홈페이지 프로필 사진 참고, 직원분 외형은 임의 기본값이니 자유롭게 고치세요.",
+ "seated": [
+  {"name": "유병택", "seat": "S1", "look": {"hair": "short", "glasses": "thick", "suit": "#1f2a44", "tie": "#5f7f95"}},
+  {"name": "신동환", "seat": "S2", "look": {"hair": "short", "glasses": "round", "suit": "#1b1c21", "tie": "#5b6c88"}},
+  {"name": "김종화", "seat": "S3", "look": {"hair": "side", "suit": "#1c1f26", "tie": "#6b6f78"}},
+  {"name": "박정헌", "seat": "S4", "look": {"hair": "short", "suit": "#222630", "tie": "#2f6fd0"}},
+  {"name": "정영훈", "seat": "S5", "look": {"hair": "short", "suit": "#243556", "tie": "#1f2a44"}},
+  {"name": "주현우", "seat": "S6", "look": {"hair": "side", "glasses": "round", "suit": "#1d1f25", "tie": "#5a1e27"}},
+  {"name": "김성중", "seat": "S7", "look": {"hair": "quiff", "suit": "#1c1d22", "tie": "#6b2430"}},
+  {"name": "김우진", "seat": "S9", "look": {"hair": "short", "glasses": "rect", "suit": "#232833", "tie": "#4f6a8f"}},
+  {"name": "우지현", "seat": "S10", "look": {"hair": "side", "suit": "#16171b", "tie": "#15171c"}},
+  {"name": "현지혜", "seat": "S11", "look": {"hair": "long", "hairColor": "#4a3426", "suit": "#1b1c22", "inner": "blouse"}},
+  {"name": "오정우", "seat": "S12", "look": {"hair": "quiff", "suit": "#1b2234", "tie": "#1f2a44"}},
+  {"name": "김주연", "seat": "P7_HEAD", "look": {"hair": "bob", "inner": "knit", "innerColor": "#d9cbb5"}},
+  {"name": "최성은", "seat": "P7_T1", "look": {"hair": "long", "inner": "knit", "innerColor": "#5d6470"}},
+  {"name": "김인희", "seat": "P7_T2", "look": {"hair": "short", "inner": "shirt", "innerColor": "#c9d6e6"}},
+  {"name": "강승연", "seat": "P7_T3", "look": {"hair": "bob", "hairColor": "#3b2b22", "inner": "knit", "innerColor": "#f0ece4"}},
+  {"name": "이향미", "seat": "P7_B1", "look": {"hair": "long", "hairColor": "#2e221c", "inner": "knit", "innerColor": "#24324a"}},
+  {"name": "이보람", "seat": "P7_B2", "look": {"hair": "side", "inner": "shirt", "innerColor": "#f4f4f2"}},
+  {"name": "조유정", "seat": "P7_B3", "look": {"hair": "long", "inner": "knit", "innerColor": "#8a7a68"}},
+  {"name": "김영주", "seat": "O_TR_W", "look": {"hair": "short", "suit": "#1d2027", "tie": "#5a7090"}},
+  {"name": "윤제선", "seat": "O_BR_E", "look": {"hair": "short", "suit": "#2b2f36", "tie": "#4a4d55"}},
+  {"name": "박주현", "seat": "O_BR_W", "look": {"hair": "side", "suit": "#1c1f26", "tie": "#4d7473"}},
+  {"name": "김종훈", "seat": "O_TL_W", "look": {"hair": "short", "glasses": "round", "suit": "#1f2a44", "tie": "#3d6fb6"}},
+  {"name": "박경석", "seat": "O_BL_W", "look": {"hair": "side", "suit": "#243556", "tie": "#b39aa4"}}
+ ],
+ "walking": [
+  {"name": "김지선", "route": "loop_cw", "speed": 0.9, "offset": 0.0, "carry": "folder", "look": {"hair": "long", "suit": "#1d1e24", "inner": "blouse"}},
+  {"name": "박상일", "route": "loop_ccw", "speed": 0.8, "offset": 0.45, "carry": "cup", "look": {"hair": "side", "suit": "#23262e", "tie": "#5a1e27"}},
+  {"name": "노기완", "route": "open", "speed": 0.85, "offset": 0.2, "carry": "phone", "look": {"hair": "short", "suit": "#1e2230", "tie": "#1f3c6e"}}
+ ],
+ "staffTitle": "직원",
+ "rooms": {
+  "R8": "미정"
+ }
+}

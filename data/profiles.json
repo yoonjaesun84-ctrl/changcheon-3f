@@ -1,0 +1,116 @@
+{
+ "윤제선": {
+  "title": "대표 변호사",
+  "fields": "기업지배구조 · 경영권 분쟁 · 주주행동주의",
+  "photo": "assets/profiles/p00.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "김종훈": {
+  "title": "대표 변호사",
+  "fields": "기업 일반 · 가사 분쟁 · 부동산",
+  "photo": "assets/profiles/p01.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "김성중": {
+  "title": "파트너 변호사",
+  "fields": "민·형사 · 행정 · 기업 일반 자문",
+  "photo": "assets/profiles/p02.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "김우진": {
+  "title": "파트너 변호사",
+  "fields": "자본시장 및 기업금융 · 인수·합병 · 부동산",
+  "photo": "assets/profiles/p03.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "김지선": {
+  "title": "파트너 변호사",
+  "fields": "M&A · 스타트업 · 제약",
+  "photo": "assets/profiles/p04.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "노기완": {
+  "title": "파트너 변호사",
+  "fields": "산업재해 · 기업일반 · 의료소송",
+  "photo": "assets/profiles/p05.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "박경석": {
+  "title": "파트너 변호사",
+  "fields": "금융 · 행정(징계) · 민·형사 소송",
+  "photo": "assets/profiles/p06.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "박상일": {
+  "title": "파트너 변호사",
+  "fields": "IT · 소프트웨어 · 개인정보보호",
+  "photo": "assets/profiles/p07.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "박정헌": {
+  "title": "파트너 변호사",
+  "fields": "가상자산 · 건설 · 부동산",
+  "photo": "assets/profiles/p08.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "박주현": {
+  "title": "파트너 변호사",
+  "fields": "기업 자문 · M&A·자본시장 · 민사·기업 송무",
+  "photo": "assets/profiles/p09.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "신동환": {
+  "title": "파트너 변호사",
+  "fields": "상사·경영권 분쟁 · 자본시장 분쟁 · 부동산·건설 소송",
+  "photo": "assets/profiles/p10.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "우지현": {
+  "title": "파트너 변호사",
+  "fields": "엔터테인먼트 · 지식재산권 · 사이버범죄",
+  "photo": "assets/profiles/p11.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "유병택": {
+  "title": "파트너 변호사",
+  "fields": "인사·노사 · 기업법무 · 민사·행정소송",
+  "photo": "assets/profiles/p12.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "정영훈": {
+  "title": "파트너 변호사",
+  "fields": "조세·행정 소송 및 자문 · 정보공개 소송 · 경영권·주주 분쟁",
+  "photo": "assets/profiles/p13.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "현지혜": {
+  "title": "파트너 변호사",
+  "fields": "가상자산 · 자금세탁방지(AML) · 컴플라이언스",
+  "photo": "assets/profiles/p14.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "김영주": {
+  "title": "소속 변호사",
+  "fields": "송무 일반(민사·형사·행정) · 기업 일반 자문",
+  "photo": "assets/profiles/p15.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "김종화": {
+  "title": "소속 변호사",
+  "fields": "주주권 행사·회사법 · 기업형사 · 조세",
+  "photo": "assets/profiles/p16.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "오정우": {
+  "title": "소속 변호사",
+  "fields": "송무 일반(민사·가사) · 기업 법무",
+  "photo": "assets/profiles/p17.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ },
+ "주현우": {
+  "title": "소속 변호사",
+  "fields": "기업 자문(M&A·투자, IT·개인정보) · 공공기관 자문 · 송무 일반(민사·형사·행정)",
+  "photo": "assets/profiles/p18.webp",
+  "source": "https://www.lawcc.co.kr/professionals/"
+ }
+}

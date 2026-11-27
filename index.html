@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>창천 3층 3D 지도</title>
+<style>
+:root {
+  --navy: #1b365d;
+  --ink: #1f2937;
+  --muted: #5a6577;
+  --line: rgba(27, 54, 93, 0.12);
+  --glass: rgba(255, 255, 255, 0.82);
+  font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #cfd8de; color: var(--ink); }
+#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.labels { position: fixed; inset: 0; }
+
+.card {
+  position: fixed; z-index: 5;
+  background: var(--glass);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 10px 30px -12px rgba(15, 30, 55, 0.35), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  border-radius: 14px;
+}
+.brand { top: 20px; left: 20px; padding: 16px 20px 14px; min-width: 250px; }
+.brand .eyebrow { font-size: 11px; letter-spacing: 0.14em; color: var(--muted); font-weight: 700; }
+.brand h1 { margin: 4px 0 6px; font-size: 19px; color: var(--navy); letter-spacing: -0.01em; }
+.brand .sub { margin: 0; font-size: 12px; color: var(--muted); }
+
+.controls { top: 20px; right: 20px; padding: 12px; width: 270px; display: flex; flex-direction: column; gap: 10px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: rgba(27, 54, 93, 0.07); border-radius: 10px; padding: 3px; }
+.seg button { border: 0; background: transparent; padding: 8px 0; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; transition: all .2s; }
+.seg button.on { background: var(--navy); color: #fff; box-shadow: 0 4px 12px -4px rgba(27, 54, 93, .6); }
+.row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ghost { border: 1px solid var(--line); background: rgba(255, 255, 255, .7); border-radius: 9px; padding: 7px 0; font: inherit; font-size: 12px; color: var(--ink); cursor: pointer; transition: background .2s, border-color .2s; }
+.ghost:hover { background: #fff; border-color: rgba(27, 54, 93, .35); }
+#search-wrap input { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; font: inherit; font-size: 13px; background: #fff; outline: none; }
+#search-wrap input:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(27, 54, 93, .12); }
+#results { list-style: none; margin: 6px 0 0; padding: 0; max-height: 260px; overflow: auto; }
+#results li { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+#results li:hover { background: rgba(27, 54, 93, .07); }
+#results li span { color: var(--muted); font-size: 11.5px; }
+#results li.none { color: var(--muted); cursor: default; }
+
+.profile { left: 20px; bottom: 34px; width: 300px; padding: 14px; display: flex; gap: 14px; align-items: center; }
+.profile .photo { width: 84px; height: 106px; flex: none; border-radius: 10px; overflow: hidden; background: #e7ebf0; display: grid; place-items: center; }
+.profile .photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
+.profile .initial { font-size: 22px; font-weight: 800; color: var(--navy); }
+.profile .name { font-size: 17px; font-weight: 800; color: var(--navy); }
+.profile .title { font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 2px; }
+.profile .fields { font-size: 12px; color: var(--ink); margin-top: 8px; line-height: 1.45; }
+.profile .where { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+.profile .close { position: absolute; top: 6px; right: 8px; border: 0; background: transparent; font-size: 18px; color: var(--muted); cursor: pointer; }
+#tip { position: fixed; left: 0; top: 0; z-index: 6; pointer-events: none; background: rgba(20, 30, 45, .88); color: #fff; font-size: 12px; padding: 6px 10px; border-radius: 7px; white-space: nowrap; }
+.credit { position: fixed; right: 14px; bottom: 10px; z-index: 5; font-size: 10.5px; color: rgba(30, 40, 55, .6); }
+
+/* 3D 라벨 */
+.lbl { pointer-events: none; white-space: nowrap; transform: translateY(-4px); }
+.lbl.room { display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, .92); border: 1px solid rgba(27, 54, 93, .18); padding: 3px 9px 3px 3px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--ink); box-shadow: 0 4px 12px -6px rgba(0, 0, 0, .35); }
+.lbl.room b { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 11px; }
+.lbl.room.empty { color: var(--muted); }
+.lbl.room.empty b { background: #9aa6b5; }
+.lbl.fac { font-size: 11px; font-weight: 700; color: var(--navy); background: rgba(255, 255, 255, .78); padding: 3px 8px; border-radius: 6px; letter-spacing: .02em; }
+.lbl.person { font-size: 11.5px; font-weight: 700; color: #fff; background: rgba(27, 54, 93, .9); padding: 3px 8px; border-radius: 6px; box-shadow: 0 4px 10px -4px rgba(0, 0, 0, .4); }
+.lbl.person em { font-style: normal; font-weight: 500; opacity: .75; margin-left: 5px; font-size: 10px; }
+.lbl.person.walking { background: rgba(90, 101, 119, .92); }
+.lbl.person.hl { background: #c8102e; transform: translateY(-4px) scale(1.15); }
+
+#loading { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: linear-gradient(160deg, #e9eef2, #cfd8de); transition: opacity .8s; }
+#loading.done { opacity: 0; pointer-events: none; }
+#loading .box { text-align: center; color: var(--navy); font-size: 14px; }
+#loading .bar { margin-top: 12px; width: 220px; height: 3px; background: rgba(27, 54, 93, .15); border-radius: 3px; overflow: hidden; }
+#loading .bar i { display: block; height: 100%; width: 0; background: var(--navy); transition: width .3s; }
+
+@media (max-width: 720px) {
+  .brand { left: 10px; top: 10px; min-width: 0; padding: 12px 14px; }
+  .brand .sub { display: none; }
+  .controls { top: auto; bottom: 28px; right: 10px; left: 10px; width: auto; }
+}
+
+.profile[hidden] { display: none; }
+
+
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+} }
+</script>
+
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<header class="card brand">
+  <div class="eyebrow">도산대로 311 · 3F</div>
+  <h1>법무법인(유한) 창천</h1>
+  <p class="sub">드래그로 돌려 보기 · 휠로 확대 · 방을 클릭하면 이동</p>
+</header>
+
+<nav class="card controls">
+  <div id="mode" class="seg" role="tablist" aria-label="보기 모드">
+    <button data-mode="intro" class="on">소개</button>
+    <button data-mode="guide">내부 안내</button>
+  </div>
+  <div class="row">
+    <button id="btn-home" class="ghost">전체 보기</button>
+    <button id="btn-eye" class="ghost">눈높이</button>
+    <button id="btn-city" class="ghost">도시 보기</button>
+  </div>
+  <div id="search-wrap" hidden>
+    <input id="q" type="search" placeholder="이름 검색 (예: 윤제선)" autocomplete="off">
+    <ul id="results"></ul>
+  </div>
+</nav>
+
+<div id="tip" hidden></div>
+<aside id="card" class="card profile" hidden>
+  <button class="close" aria-label="닫기">×</button>
+  <div class="photo"></div>
+  <div class="info">
+    <div class="name"></div>
+    <div class="title"></div>
+    <div class="fields"></div>
+    <div class="where"></div>
+  </div>
+</aside>
+<footer class="credit">주변 건물 © OpenStreetMap contributors</footer>
+
+<div id="loading"><div class="box"><b>3D 사무실 불러오는 중</b><div class="bar"><i></i></div></div></div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+ "K": 8.231383180618288,
+ "encoding": "srgb_gamma2.2_flipY_false",
+ "maps": [
+  "CEIL_LM_flat",
+  "CEIL_LM_grid",
+  "CEIL_LM_louver",
+  "LM_floor",
+  "LM_furniture",
+  "LM_furniture2",
+  "LM_trim",
+  "LM_walls"
+ ],
+ "median": 0.6672188639640808
+}
