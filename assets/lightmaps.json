@@ -1,5 +1,5 @@
 {
- "K": 8.243325996398926,
+ "K": 8.201975393295289,
  "encoding": "srgb_gamma2.2_flipY_false",
  "maps": [
   "CEIL_LM_flat",
@@ -11,5 +11,5 @@
   "LM_trim",
   "LM_walls"
  ],
- "median": 0.791693389415741
+ "median": 0.7914952039718628
 }
