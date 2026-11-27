@@ -3358,33 +3358,6 @@
    "room": "OPEN"
   },
   {
-   "type": "plant",
-   "pos": [
-    17.907,
-    2.887
-   ],
-   "rot": 0,
-   "room": "OPEN"
-  },
-  {
-   "type": "plant",
-   "pos": [
-    19.563,
-    7.391
-   ],
-   "rot": 0,
-   "room": "OPEN"
-  },
-  {
-   "type": "plant",
-   "pos": [
-    12.411,
-    2.755
-   ],
-   "rot": 0,
-   "room": "CORR"
-  },
-  {
    "type": "counter",
    "pos": [
     7.616,
