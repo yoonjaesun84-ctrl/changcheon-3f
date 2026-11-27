@@ -8,7 +8,7 @@ import { PathWalker } from './people.js';
 import { createCharacter, Actor } from './characters.js';
 
 const $ = (s) => document.querySelector(s);
-const state = { mode: 'intro', ready: false, follow: null, flying: null };
+const state = { mode: 'guide', ready: false, follow: null, flying: null, showNames: true };
 
 // ------------------------------------------------------------------ renderer / scene
 const canvas = $('#c');
@@ -292,14 +292,15 @@ const center = P(C[0], C[1], 0);
 const VIEW_DOLL = { pos: P(C[0] + 9, C[1] + 19, 21), target: P(C[0] + 0.5, C[1], 0) };
 const VIEW_CITY = { pos: P(C[0] + 150, C[1] + 210, 150), target: P(C[0], C[1], -6) };
 
-function setMode(mode) {
-  state.mode = mode;
-  document.body.dataset.mode = mode;
-  roomLabels.visible = mode === 'guide';
-  for (const p of persons) p.tag.visible = mode === 'guide' && !p.tag.userData.onlyWhenPicked;
-  $('#search-wrap').hidden = mode !== 'guide';
-  document.querySelectorAll('#mode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
-  if (mode !== 'guide') { $('#results').innerHTML = ''; $('#q').value = ''; $('#card').hidden = true; }
+function setMode(mode) {          // 단일 모드(소개+내부 안내 통합). 외부 호출 호환용
+  state.mode = 'guide';
+}
+function setNames(on) {
+  state.showNames = on;
+  const b = $('#btn-names');
+  b.classList.toggle('on', on);
+  b.textContent = on ? '이름표 켜짐' : '이름표 꺼짐';
+  if (!on) $('#card').hidden = true;
 }
 
 // ------------------------------------------------------------------ interaction
@@ -347,7 +348,7 @@ labelRenderer.domElement.addEventListener('pointerup', (e) => {
   flyTo(P(cx + d * 0.35, cy + d * 0.75, d * 0.95 + 1.5), P(cx, cy, 0.4));
 });
 
-$('#mode').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setMode(b.dataset.mode); });
+$('#btn-names').onclick = () => setNames(!state.showNames);
 $('#btn-home').onclick = () => flyTo(VIEW_DOLL.pos, VIEW_DOLL.target);
 $('#btn-city').onclick = () => flyTo(VIEW_CITY.pos, VIEW_CITY.target, 2.2);
 $('#btn-eye').onclick = () => flyTo(P(14.2, 8.7, 1.6), P(18.6, 2.2, 1.15), 1.8);
@@ -374,10 +375,11 @@ q.addEventListener('keydown', (e) => { if (e.key === 'Enter') results.querySelec
 function focusPerson(p) {
   persons.forEach((x) => {
     x.tag.element.classList.remove('hl');
-    if (x.tag.userData.onlyWhenPicked) x.tag.visible = false;
+    x.tag.userData.picked = false;
   });
   p.tag.element.classList.add('hl');
-  p.tag.visible = true;
+  p.tag.userData.picked = true;
+  if (!state.showNames) setNames(true);
   if (state.mode === 'guide') showCard(p.name, roomNameOf(p));
   if (p.walker) {
     state.follow = p;
@@ -435,8 +437,12 @@ function tick() {
   const dist = camera.position.distanceTo(center);
   const op = THREE.MathUtils.clamp((dist - 45) / 80, 0, 1) * 0.28;
   for (const m of ourUpper) { m.material.opacity = op; m.visible = op > 0.01; }
-  facilityLabels.visible = dist < 90 && above;
-  roomLabels.visible = state.mode === 'guide' && dist < 90;
+  const near = dist < 90 && state.ready && !state.intro;
+  facilityLabels.visible = near && above;
+  roomLabels.visible = near && state.showNames;
+  for (const p of persons) {
+    p.tag.visible = near && state.showNames && (!p.tag.userData.onlyWhenPicked || p.tag.userData.picked);
+  }
   renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
   requestAnimationFrame(tick);
@@ -445,9 +451,11 @@ function tick() {
 // ------------------------------------------------------------------ start
 camera.position.copy(VIEW_CITY.pos);
 controls.target.copy(VIEW_CITY.target);
-setMode('intro');
+setMode('guide');
+setNames(true);
 state.ready = true;
+state.intro = true;
 $('#loading').classList.add('done');
 tick();
-setTimeout(() => flyTo(VIEW_DOLL.pos, VIEW_DOLL.target, 4.5), 600);
+setTimeout(() => { flyTo(VIEW_DOLL.pos, VIEW_DOLL.target, 4.5); setTimeout(() => { state.intro = false; }, 3800); }, 600);
 window.__office = { scene, camera, controls, flyTo, setMode, persons, P };

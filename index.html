@@ -87,6 +87,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #cfd8de; col
 .profile[hidden] { display: none; }
 
 
+.toggle { border: 1px solid var(--line); background: rgba(27, 54, 93, .07); border-radius: 9px; padding: 8px 0; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--muted); cursor: pointer; }
+.toggle.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+
 </style>
 <script type="importmap">
 { "imports": {
@@ -102,20 +105,17 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #cfd8de; col
 <header class="card brand">
   <div class="eyebrow">도산대로 311 · 3F</div>
   <h1>법무법인(유한) 창천</h1>
-  <p class="sub">드래그로 돌려 보기 · 휠로 확대 · 방을 클릭하면 이동</p>
+  <p class="sub">드래그로 돌려 보기 · 휠로 확대 · 사람이나 방을 누르면 프로필</p>
 </header>
 
 <nav class="card controls">
-  <div id="mode" class="seg" role="tablist" aria-label="보기 모드">
-    <button data-mode="intro" class="on">소개</button>
-    <button data-mode="guide">내부 안내</button>
-  </div>
   <div class="row">
     <button id="btn-home" class="ghost">전체 보기</button>
     <button id="btn-eye" class="ghost">눈높이</button>
     <button id="btn-city" class="ghost">도시 보기</button>
   </div>
-  <div id="search-wrap" hidden>
+  <button id="btn-names" class="toggle on">이름표 켜짐</button>
+  <div id="search-wrap">
     <input id="q" type="search" placeholder="이름 검색 (예: 윤제선)" autocomplete="off">
     <ul id="results"></ul>
   </div>
