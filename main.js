@@ -4,8 +4,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { PathWalker } from './people.js';
-import { createCharacter, Actor } from './characters.js';
+import { PathWalker } from './people.js?v=20261127144706';
+import { createCharacter, Actor } from './characters.js?v=20261127144706';
 
 const $ = (s) => document.querySelector(s);
 const state = { mode: 'guide', ready: false, follow: null, flying: null, showNames: true };
@@ -83,14 +83,14 @@ const texLoader = new THREE.TextureLoader();
 
 const fetchJSON = (u) => fetch(u).then((r) => r.json());
 const [plan, people, lmMeta, cityMeta, profiles] = await Promise.all([
-  fetchJSON('./data/plan.json'), fetchJSON('./data/people.json'),
-  fetchJSON('./assets/lightmaps.json'), fetchJSON('./assets/city.json'),
-  fetchJSON('./data/profiles.json').catch(() => ({})),
+  fetchJSON('./data/plan.json?v=20261127144706'), fetchJSON('./data/people.json?v=20261127144706'),
+  fetchJSON('./assets/lightmaps.json?v=20261127144706'), fetchJSON('./assets/city.json?v=20261127144706'),
+  fetchJSON('./data/profiles.json?v=20261127144706').catch(() => ({})),
 ]);
 
 const pmrem = new THREE.PMREMGenerator(renderer);
 const roomEnv = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-const hdr = await texLoader.loadAsync('./assets/sky.jpg');
+const hdr = await texLoader.loadAsync('./assets/sky.jpg?v=20261127144706');
 hdr.colorSpace = THREE.SRGBColorSpace;
 hdr.mapping = THREE.EquirectangularReflectionMapping;
 const skyEnv = pmrem.fromEquirectangular(hdr).texture;
@@ -101,15 +101,15 @@ scene.environmentRotation.y = THREE.MathUtils.degToRad(-130);
 setProgress(0.15);
 
 const [office, city] = await Promise.all([
-  loader.loadAsync('./assets/office.glb', (e) => e.total && setProgress(0.15 + 0.6 * (e.loaded / e.total))),
-  loader.loadAsync('./assets/city.glb'),
+  loader.loadAsync('./assets/office.glb?v=20261127144706', (e) => e.total && setProgress(0.15 + 0.6 * (e.loaded / e.total))),
+  loader.loadAsync('./assets/city.glb?v=20261127144706'),
 ]);
 setProgress(0.8);
 
 // 라이트맵
 const lmTex = {};
 await Promise.all(lmMeta.maps.map(async (name) => {
-  const t = await texLoader.loadAsync(`./assets/lm/${name}.jpg`);
+  const t = await texLoader.loadAsync(`./assets/lm/${name}.jpg?v=20261127144706`);
   t.flipY = false;
   t.colorSpace = THREE.SRGBColorSpace;
   t.channel = 1;
