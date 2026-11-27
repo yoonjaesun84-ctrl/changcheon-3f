@@ -4,8 +4,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { PathWalker } from './people.js?v=20261127144706';
-import { createCharacter, Actor } from './characters.js?v=20261127144706';
+import { PathWalker } from './people.js?v=20261127145035';
+import { createCharacter, Actor } from './characters.js?v=20261127145035';
 
 const $ = (s) => document.querySelector(s);
 const state = { mode: 'guide', ready: false, follow: null, flying: null, showNames: true };
@@ -83,14 +83,14 @@ const texLoader = new THREE.TextureLoader();
 
 const fetchJSON = (u) => fetch(u).then((r) => r.json());
 const [plan, people, lmMeta, cityMeta, profiles] = await Promise.all([
-  fetchJSON('./data/plan.json?v=20261127144706'), fetchJSON('./data/people.json?v=20261127144706'),
-  fetchJSON('./assets/lightmaps.json?v=20261127144706'), fetchJSON('./assets/city.json?v=20261127144706'),
-  fetchJSON('./data/profiles.json?v=20261127144706').catch(() => ({})),
+  fetchJSON('./data/plan.json?v=20261127145035'), fetchJSON('./data/people.json?v=20261127145035'),
+  fetchJSON('./assets/lightmaps.json?v=20261127145035'), fetchJSON('./assets/city.json?v=20261127145035'),
+  fetchJSON('./data/profiles.json?v=20261127145035').catch(() => ({})),
 ]);
 
 const pmrem = new THREE.PMREMGenerator(renderer);
 const roomEnv = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-const hdr = await texLoader.loadAsync('./assets/sky.jpg?v=20261127144706');
+const hdr = await texLoader.loadAsync('./assets/sky.jpg?v=20261127145035');
 hdr.colorSpace = THREE.SRGBColorSpace;
 hdr.mapping = THREE.EquirectangularReflectionMapping;
 const skyEnv = pmrem.fromEquirectangular(hdr).texture;
@@ -101,15 +101,15 @@ scene.environmentRotation.y = THREE.MathUtils.degToRad(-130);
 setProgress(0.15);
 
 const [office, city] = await Promise.all([
-  loader.loadAsync('./assets/office.glb?v=20261127144706', (e) => e.total && setProgress(0.15 + 0.6 * (e.loaded / e.total))),
-  loader.loadAsync('./assets/city.glb?v=20261127144706'),
+  loader.loadAsync('./assets/office.glb?v=20261127145035', (e) => e.total && setProgress(0.15 + 0.6 * (e.loaded / e.total))),
+  loader.loadAsync('./assets/city.glb?v=20261127145035'),
 ]);
 setProgress(0.8);
 
 // 라이트맵
 const lmTex = {};
 await Promise.all(lmMeta.maps.map(async (name) => {
-  const t = await texLoader.loadAsync(`./assets/lm/${name}.jpg?v=20261127144706`);
+  const t = await texLoader.loadAsync(`./assets/lm/${name}.jpg?v=20261127145035`);
   t.flipY = false;
   t.colorSpace = THREE.SRGBColorSpace;
   t.channel = 1;
@@ -201,8 +201,9 @@ for (const r of rooms) {
   if (LABEL_SKIP.has(r.id)) continue;
   const [cx, cy] = r.id === 'OPEN' ? [17.2, 2.6] : centroid(r.poly);
   if (r.kind === 'office') {
+    // 사람 이름표(남색)에 방 번호를 붙이므로, 비어 있는 방만 따로 표시
     const who = officeOwner[r.id];
-    roomLabels.add(label(`<b>${r.number}</b>${who ? `<span>${who}</span>` : ''}`, `room${who === '미정' || !who ? ' empty' : ''}`, P(cx, cy, 2.2)));
+    if (!who || who === '미정') roomLabels.add(label(`<b>${r.number}</b>${who || ''}`, 'person empty', P(cx, cy, 1.6)));
   } else {
     facilityLabels.add(label(r.label, 'fac', P(cx, cy, r.kind === 'open' || r.kind === 'team' ? 2.5 : 2.2)));
   }
@@ -241,10 +242,9 @@ for (const { name, seat, look } of people.seated) {
   p.rotation.y = -THREE.MathUtils.degToRad(s.face);
   envify(p);
   scene.add(p);
-  const tag = label(name, 'person', new THREE.Vector3(0, 1.62, 0));
+  const room = rooms.find((r) => r.id === s.room);
+  const tag = label(room?.kind === 'office' ? `<b>${room.number}</b>${name}` : name, 'person', new THREE.Vector3(0, 1.62, 0));
   p.add(tag);
-  // 개인실은 방 라벨에 이름이 있으므로 검색·클릭으로 골랐을 때만 표시
-  tag.userData.onlyWhenPicked = rooms.find((r) => r.id === s.room)?.kind === 'office';
   const per = { name, obj: p, actor, seat: s, tag };
   p.userData.person = per;
   persons.push(per);

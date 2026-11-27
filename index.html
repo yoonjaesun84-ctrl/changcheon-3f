@@ -90,6 +90,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #cfd8de; col
 .toggle { border: 1px solid var(--line); background: rgba(27, 54, 93, .07); border-radius: 9px; padding: 8px 0; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--muted); cursor: pointer; }
 .toggle.on { background: var(--navy); color: #fff; border-color: var(--navy); }
 
+.lbl.person { display: flex; align-items: center; gap: 5px; }
+.lbl.person b { display: grid; place-items: center; min-width: 17px; height: 17px; padding: 0 3px; border-radius: 9px; background: #fff; color: var(--navy); font-size: 10.5px; }
+.lbl.person.empty { background: rgba(90, 101, 119, .85); }
+
 </style>
 <script type="importmap">
 { "imports": {
@@ -135,6 +139,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #cfd8de; col
 <footer class="credit">주변 건물 © OpenStreetMap contributors</footer>
 
 <div id="loading"><div class="box"><b>3D 사무실 불러오는 중</b><div class="bar"><i></i></div></div></div>
-<script type="module" src="./main.js?v=20261127144706"></script>
+<script type="module" src="./main.js?v=20261127145035"></script>
 </body>
 </html>
