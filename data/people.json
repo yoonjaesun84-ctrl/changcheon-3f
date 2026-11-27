@@ -14,7 +14,7 @@
   {"name": "오정우", "seat": "S12", "look": {"hair": "quiff", "suit": "#1b2234", "tie": "#1f2a44"}},
   {"name": "김주연", "seat": "P7_HEAD", "look": {"hair": "bob", "inner": "knit", "innerColor": "#d9cbb5"}},
   {"name": "최성은", "seat": "P7_T1", "look": {"hair": "long", "inner": "knit", "innerColor": "#5d6470"}},
-  {"name": "김인희", "seat": "P7_T2", "look": {"hair": "short", "inner": "shirt", "innerColor": "#c9d6e6"}},
+  {"name": "김인희", "seat": "P7_T2", "look": {"hair": "bob", "inner": "shirt", "innerColor": "#c9d6e6"}},
   {"name": "강승연", "seat": "P7_T3", "look": {"hair": "bob", "hairColor": "#3b2b22", "inner": "knit", "innerColor": "#f0ece4"}},
   {"name": "이향미", "seat": "P7_B1", "look": {"hair": "long", "hairColor": "#2e221c", "inner": "knit", "innerColor": "#24324a"}},
   {"name": "이보람", "seat": "P7_B2", "look": {"hair": "side", "inner": "shirt", "innerColor": "#f4f4f2"}},
