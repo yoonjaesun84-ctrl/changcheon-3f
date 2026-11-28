@@ -1,0 +1,11 @@
+{
+ "_설명": "오늘의 임무 목록. 담당자(who)는 예시이니 실제 분담에 맞게 고치세요. who가 이름 하나면 고정, 여러 명이면 주마다 돌아가며 맡습니다. days: weekdays(월~금) | daily(매일) | [\"mon\",\"tue\",\"wed\",\"thu\",\"fri\"] 중 고르기. spot: 3D 지도 위치(m, 도면 좌표). stars: 완료하면 받는 별. icon: coffee|sparkle|recycle|fridge|printer|broom|rice|plant. prop: \"plant\"이면 그 자리에 화분을 놓습니다. 회의실 안내 정리는 8번 대형실 자리에 두었습니다(다른 방이면 spot을 바꾸세요).",
+ "missions": [
+  {"id": "plant_water", "title": "화분 물주기", "spot": [15.8, 12.15], "stand": [16.3, 11.65], "days": ["mon", "thu"], "who": ["강승연", "이보람", "조유정"], "stars": 2, "icon": "plant", "prop": "plant"},
+  {"id": "coffee_water", "title": "커피머신 물 갈기", "spot": [7.95, 11.96], "days": "weekdays", "who": ["김인희", "강승연", "이보람"], "stars": 2, "icon": "coffee"},
+  {"id": "pantry_tidy", "title": "탕비실 정리", "spot": [8.15, 11.15], "days": ["mon", "wed", "fri"], "who": "조유정", "stars": 2, "icon": "sparkle"},
+  {"id": "meeting_room", "title": "회의실 안내 정리", "spot": [1.95, 1.25], "days": ["tue", "fri"], "who": "이향미", "stars": 2, "icon": "broom"},
+  {"id": "fridge", "title": "냉장고 정리", "spot": [8.55, 12.05], "days": ["fri"], "who": "최성은", "stars": 3, "icon": "fridge"},
+  {"id": "lunch", "title": "점심 총무", "spot": [16.6, 11.0], "days": "weekdays", "who": ["박주현", "김종훈", "박경석", "윤제선", "신동환", "현지혜", "김우진", "우지현", "유병택"], "stars": 3, "icon": "rice"}
+ ]
+}

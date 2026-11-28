@@ -75,15 +75,17 @@ function buildGlasses(head, kind) {
     t.rotation.y = Math.PI / 2;
     if (kind === 'rect' || kind === 'thick') t.scale.set(1, 0.78, 1.15);
     t.position.set(0.158, 0.012, z);
+    t.userData.glasses = true;
     head.add(t);
   }
   const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.006, 0.04), m);
   bridge.position.set(0.162, 0.02, 0);
+  bridge.userData.glasses = true;
   head.add(bridge);
 }
 
 export function createCharacter(look = {}) {
-  const skin = mat(SKIN, 0.55);
+  const skin = new THREE.MeshStandardMaterial({ color: look.skin || SKIN, roughness: 0.55 });   // 캐릭터별(사진 얼굴 피부색 적용)
   const suit = look.suit || null;
   const innerColor = look.innerColor || (look.inner === 'blouse' ? '#f5f3ef' : '#f3f4f6');
   const top = suit ? mat(suit, 0.78) : mat(innerColor, 0.88);
@@ -143,6 +145,7 @@ export function createCharacter(look = {}) {
   head.add(shy);
   const blushM = new THREE.MeshBasicMaterial({ color: '#ff5f7a', transparent: true, opacity: 0.85, depthWrite: false });
   const lineM = new THREE.MeshBasicMaterial({ color: '#b3122f' });
+  const shyCartoon = [];   // 만화 얼굴 전용(^ ^ 눈, 오물오물 입) — 사진 얼굴이면 숨김
   for (const z of [-1, 1]) {
     const bl = sphere(0.04, blushM, 16, 10);
     bl.scale.set(0.25, 0.55, 1.1);
@@ -158,14 +161,18 @@ export function createCharacter(look = {}) {
     arc.rotation.set(0, Math.PI / 2, 0);
     arc.position.set(0.157, 0.0, z * 0.056);
     shy.add(arc);
+    shyCartoon.push(arc);
   }
   const wavy = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.0045, 6, 12, Math.PI), mat('#8c4a44', 0.6));
   wavy.rotation.set(0, Math.PI / 2, Math.PI);
   wavy.position.set(0.159, -0.058, 0);
   shy.add(wavy);
+  shyCartoon.push(wavy);
   const normalFace = [];
   head.children.forEach((c) => { if (c !== skull && c !== shy) normalFace.push(c); });
+  const nBeforeHair = head.children.length;
   buildHair(head, look);
+  head.children.slice(nBeforeHair).forEach((c) => { c.userData.hair = true; });
   buildGlasses(head, look.glasses);
 
   const arm = (side) => {
@@ -243,7 +250,8 @@ export function createCharacter(look = {}) {
     root.add(h);
     hearts.push(h);
   }
-  root.userData.rig = { pelvis, spine, head, L, R, LL, LR, props, shy, normalFace, hearts };
+  root.userData.rig = { pelvis, spine, head, skull, L, R, LL, LR, props, shy, normalFace, hearts, skin, shyCartoon, faceMesh: null };
+  root.userData.look = look;
   root.traverse((o) => { if (o.isMesh) o.userData.charRoot = root; });
   return root;
 }
@@ -358,6 +366,10 @@ export class Actor {
     this.emote = null;
     this.applyProps();
   }
+  say(text, sec = 4.5) {   // 말풍선
+    this.sayText = text;
+    this.sayT = sec;
+  }
   doEmote(name) {
     this.emote = name;
     this.emoteT = 0;
@@ -456,10 +468,28 @@ export class Actor {
     }
     // 칭찬 반응: 표정·하트
     const shyOn = this.emote === 'praise' && (this.emoteT || 0) <= 2.3;
-    this.bubble = this.emote === 'praise' && (this.emoteT || 0) > 2.3 ? '화이팅!' : null;
+    if (this.sayT > 0) this.sayT -= dt;
+    this.bubble = this.emote === 'praise' && (this.emoteT || 0) > 2.3 ? '화이팅!' : (this.sayT > 0 ? this.sayText : null);
     if (this.rig.shy.visible !== shyOn) {
       this.rig.shy.visible = shyOn;
-      for (const c of this.rig.normalFace) c.visible = !shyOn;
+      if (!this.rig.faceMesh) for (const c of this.rig.normalFace) c.visible = !shyOn;
+    }
+    // 사진 얼굴: 눈 깜빡임(2.5~5초마다 0.14초) + 웃음(인사·응원 등에서 활짝)
+    const fm = this.rig.faceMesh;
+    if (fm) {
+      if (this.blinkT === undefined) this.blinkT = 1 + this.rng() * 3;
+      this.blinkT -= dt;
+      let blink = 0;
+      if (this.blinkT < 0) {
+        const p = -this.blinkT / 0.14;
+        if (p < 1) blink = Math.sin(p * Math.PI);
+        else this.blinkT = 2.5 + this.rng() * 2.5;
+      }
+      let smile = this.emote ? 0.85 : 0.15;
+      if (shyOn) { blink = 0.8; smile = 1; }
+      const inf = fm.morphTargetInfluences;
+      inf[0] = blink;
+      inf[1] += (smile - inf[1]) * Math.min(1, dt * 6);
     }
     this.rig.hearts.forEach((h, i) => {
       if (!shyOn) { h.visible = false; return; }

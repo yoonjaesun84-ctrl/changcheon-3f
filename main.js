@@ -4,9 +4,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { PathWalker } from './people.js?v=20261127175620';
-import { createCharacter, Actor } from './characters.js?v=20261127175620';
-import { NavGrid } from './nav.js?v=20261127175620';
+import { PathWalker } from './people.js?v=20261128101832';
+import { createCharacter, Actor } from './characters.js?v=20261128101832';
+import { loadFace, applyFace } from './faces.js?v=20261128101832';
+import { decorateDesk, propThumbnails } from './desk_props.js?v=20261128101832';
+import { NavGrid } from './nav.js?v=20261128101832';
+import { initGame } from './game/game.js?v=20261128101832';
 
 const $ = (s) => document.querySelector(s);
 const state = { mode: 'guide', ready: false, follow: null, flying: null, showNames: true };
@@ -84,15 +87,18 @@ const loader = new GLTFLoader();
 const texLoader = new THREE.TextureLoader();
 
 const fetchJSON = (u) => fetch(u).then((r) => r.json());
-const [plan, people, lmMeta, cityMeta, profiles] = await Promise.all([
-  fetchJSON('./data/plan.json?v=20261127175620'), fetchJSON('./data/people.json?v=20261127175620'),
-  fetchJSON('./assets/lightmaps.json?v=20261127175620'), fetchJSON('./assets/city.json?v=20261127175620'),
-  fetchJSON('./data/profiles.json?v=20261127175620').catch(() => ({})),
+const [plan, people, lmMeta, cityMeta, profiles, faces, missionData, shopData] = await Promise.all([
+  fetchJSON('./data/plan.json?v=20261128101832'), fetchJSON('./data/people.json?v=20261128101832'),
+  fetchJSON('./assets/lightmaps.json?v=20261128101832'), fetchJSON('./assets/city.json?v=20261128101832'),
+  fetchJSON('./data/profiles.json?v=20261128101832').catch(() => ({})),
+  fetchJSON('./data/faces.json?v=20261128101832').catch(() => ({})),
+  fetchJSON('./data/missions.json?v=20261128101832').catch(() => ({ missions: [] })),
+  fetchJSON('./data/shop.json?v=20261128101832').catch(() => ({ items: [] })),
 ]);
 
 const pmrem = new THREE.PMREMGenerator(renderer);
 const roomEnv = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-const hdr = await texLoader.loadAsync('./assets/sky.jpg?v=20261127175620');
+const hdr = await texLoader.loadAsync('./assets/sky.jpg?v=20261128101832');
 hdr.colorSpace = THREE.SRGBColorSpace;
 hdr.mapping = THREE.EquirectangularReflectionMapping;
 const skyEnv = pmrem.fromEquirectangular(hdr).texture;
@@ -103,15 +109,15 @@ scene.environmentRotation.y = THREE.MathUtils.degToRad(-130);
 setProgress(0.15);
 
 const [office, city] = await Promise.all([
-  loader.loadAsync('./assets/office.glb?v=20261127175620', (e) => e.total && setProgress(0.15 + 0.6 * (e.loaded / e.total))),
-  loader.loadAsync('./assets/city.glb?v=20261127175620'),
+  loader.loadAsync('./assets/office.glb?v=20261128101832', (e) => e.total && setProgress(0.15 + 0.6 * (e.loaded / e.total))),
+  loader.loadAsync('./assets/city.glb?v=20261128101832'),
 ]);
 setProgress(0.8);
 
 // 라이트맵
 const lmTex = {};
 await Promise.all(lmMeta.maps.map(async (name) => {
-  const t = await texLoader.loadAsync(`./assets/lm/${name}.jpg?v=20261127175620`);
+  const t = await texLoader.loadAsync(`./assets/lm/${name}.jpg?v=20261128101832`);
   t.flipY = false;
   t.colorSpace = THREE.SRGBColorSpace;
   t.channel = 1;
@@ -236,15 +242,47 @@ function addBlob(p, size) {
 const persons = [];     // {name, obj, actor, seat|walker, tag}
 const charMeshes = [];
 const envify = (o) => o.traverse((m) => { if (m.isMesh) { m.material.envMap = roomEnv; m.material.envMapIntensity = 1.7; charMeshes.push(m); } });
+// 사진 얼굴이 있으면 비동기로 붙인다(로딩을 막지 않음)
+const attachFace = (name, p) => {
+  const f = faces[name];
+  if (!f) return;
+  loadFace(`./assets/heads/${f.id}`).then((face) => {
+    const m = applyFace(p, face);
+    m.material.envMap = roomEnv; m.material.envMapIntensity = 1.7;
+    charMeshes.push(m);
+    // 새로 붙은 머리카락·귀 등도 실내 조명 환경을 쓰게(하늘 반사로 회색빛이 도는 것 방지)
+    p.userData.rig.head.traverse((c) => {
+      if (c.isMesh && !c.material.envMap) { c.material.envMap = roomEnv; c.material.envMapIntensity = c.material.userData.envIntensity ?? 1.0; charMeshes.push(c); }
+    });
+  }).catch((e) => console.warn('얼굴 로딩 실패', name, e));
+};
 let seed = 1;
-for (const { name, seat, look } of people.seated) {
+const propEnv = (o) => o.traverse((m) => { if (m.isMesh) for (const mm of [].concat(m.material)) { mm.envMap = roomEnv; mm.envMapIntensity = 0.9; } });
+const deskItems = {}, deskGroups = {}, deskSeat = {};
+// 책상 소품을 (다시) 꾸민다 — 꾸미기 상점에서도 사용
+function setDesk(name, items, seat = deskSeat[name]) {
+  if (!seat) return;
+  deskSeat[name] = seat;
+  if (deskGroups[name]) scene.remove(deskGroups[name]);
+  const g = decorateDesk(P(seat.pos[0], seat.pos[1]), seat.face, items, { top: seat.room === 'OPEN' ? 0.745 : 0.742, name });
+  propEnv(g);
+  scene.add(g);
+  deskGroups[name] = g;
+}
+for (const { name, seat, look, desk } of people.seated) {
   const s = seats[seat];
   if (!s) continue;
+  {
+    const items = [];   // 책상은 빈 채로 시작: 별을 모아 꾸미기 상점에서 산 소품만 올라간다
+    deskItems[name] = items;
+    setDesk(name, items, s);
+  }
   const p = createCharacter(look || {});
   const actor = new Actor(p, 'sit', seed++);
   p.position.copy(P(s.pos[0], s.pos[1]));
   p.rotation.y = -THREE.MathUtils.degToRad(s.face);
   envify(p);
+  attachFace(name, p);
   scene.add(p);
   const room = rooms.find((r) => r.id === s.room);
   const tag = label(room?.kind === 'office' ? `<b>${room.number}</b>${name}` : name, 'person', new THREE.Vector3(0, 1.62, 0));
@@ -259,6 +297,7 @@ for (const w of people.walking) {
   const p = createCharacter(w.look || {});
   const actor = new Actor(p, 'walk', seed++, w.carry || null);
   envify(p);
+  attachFace(w.name, p);
   scene.add(p);
   addBlob(p, 0.9);
   const walker = new PathWalker(route, w.speed, w.offset);
@@ -287,6 +326,8 @@ function showCard(name, where) {
   card.querySelector('.title').textContent = pr?.title || people.staffTitle || '';
   card.querySelector('.fields').textContent = pr?.fields || '';
   card.querySelector('.where').textContent = where || '';
+  card.querySelector('.praise-row').innerHTML = '';
+  if (state.cardPerson && game) game.onCard(name);
   card.hidden = false;
 }
 $('#card .close').onclick = () => { $('#card').hidden = true; };
@@ -334,6 +375,8 @@ function startControl(per) {
   standUp(per);
   $('#ctrl-name').textContent = per.name;
   $('#ctrlbar').hidden = false;
+  $('#where').hidden = false;
+  whereT = 0;
   $('#card').hidden = true;
   const w = per.obj.position;
   flyTo(new THREE.Vector3(w.x + 2.2, 5.6, w.z + 4.2), new THREE.Vector3(w.x, 0.6, w.z), 1.0);
@@ -343,25 +386,55 @@ function endControl() {
   returnHome(ctrl.per);
   ctrl.per = null;
   $('#ctrlbar').hidden = true;
+  $('#where').hidden = true;
 }
 $('#card .drive').onclick = () => { if (state.cardPerson) startControl(state.cardPerson); };
-$('#ctrlbar').addEventListener('click', (e) => {
-  const b = e.target.closest('button[data-act]');
-  if (!b || !ctrl.per) return;
-  const per = ctrl.per, act = b.dataset.act;
+function doAct(act) {
+  const per = ctrl.per;
+  if (!per) return;
   if (act === 'end') return endControl();
+  if (act === 'mission') return game?.completeNear();
   if (act === 'home') { endControl(); return; }
+  if (act === 'say') {
+    const inp = $('#say'), text = inp.value.trim();
+    if (text) per.actor.say(text);
+    inp.value = '';
+    inp.blur();
+    return;
+  }
   per.nav = null;
   per.actor.setMode('stand');
   per.actor.doEmote(act);
+}
+$('#ctrlbar').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-act]');
+  if (b) doAct(b.dataset.act);
 });
+$('#say').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); doAct('say'); }
+  if (e.key === 'Escape') e.target.blur();
+  e.stopPropagation();
+});
+const KEY_ACTS = { 1: 'bow', 2: 'wave', 3: 'coffee', 4: 'praise' };
 const isTyping = () => document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
 window.addEventListener('keydown', (e) => {
   if (!ctrl.per || isTyping()) return;
   const k = e.key.toLowerCase();
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(k)) { ctrl.keys.add(k); e.preventDefault(); }
+  if (KEY_ACTS[k]) doAct(KEY_ACTS[k]);
+  if (k === 'enter') { e.preventDefault(); $('#say').focus(); }
   if (k === 'escape') endControl();
 });
+// 지금 있는 곳(위쪽 가운데 표시)
+let whereT = 0;
+function updateWhere(dt) {
+  whereT -= dt;
+  if (!ctrl.per || whereT > 0) return;
+  whereT = 0.3;
+  const pt = [ctrl.per.obj.position.x, ctrl.per.obj.position.z];
+  const r = rooms.find((rr) => inPoly(pt, rr.poly));
+  $('#where-name').textContent = !r ? '사무실' : r.id.startsWith('CORR') ? '복도' : r.name;
+}
 window.addEventListener('keyup', (e) => ctrl.keys.delete(e.key.toLowerCase()));
 const camFwd = new THREE.Vector3();
 function updateNav(per, dt) {
@@ -386,6 +459,11 @@ function updateNav(per, dt) {
       moving = true;
     }
   }
+  if (!moving && per.nav && !per.nav.path[per.nav.idx]) {   // 빈 경로(이미 도착) 처리
+    const n = per.nav;
+    per.nav = null;
+    if (n.onArrive) n.onArrive(); else per.actor.setMode('stand');
+  }
   if (!moving && per.nav) {
     const n = per.nav, tgt = n.path[n.idx];
     const dx = tgt[0] - per.obj.position.x, dy = tgt[1] - per.obj.position.z;
@@ -408,15 +486,6 @@ function updateNav(per, dt) {
   if (!moving && per === ctrl.per && per.actor.mode === 'walk') per.actor.setMode('stand');
   per.phase = (per.phase || 0) + dt * NAV_SPEED * 6.5;
   per.actor.update(dt, per.phase);
-  // 말풍선(응원하기 → "화이팅!")
-  if (per.actor.bubble && !per.bubbleTag) {
-    per.bubbleTag = label('', 'bubble', new THREE.Vector3(0, 1.88, 0));
-    per.obj.add(per.bubbleTag);
-  }
-  if (per.bubbleTag) {
-    per.bubbleTag.visible = !!per.actor.bubble;
-    if (per.actor.bubble) per.bubbleTag.element.textContent = per.actor.bubble;
-  }
   if (per === ctrl.per) {   // 카메라가 같은 거리로 따라감
     const delta = per.obj.position.clone().sub(before);
     camera.position.add(delta);
@@ -553,6 +622,20 @@ function focusPerson(p) {
 }
 
 // ------------------------------------------------------------------ loop
+// 말풍선(응원하기 → "화이팅!", 말하기, 칭찬 받음) — 앉은 사람·걷는 사람 모두
+function updateBubble(per) {
+  if (per.actor.bubble && !per.bubbleTag) {
+    per.bubbleTag = label('', 'bubble', new THREE.Vector3(0, per.walker ? 2.15 : per.actor.mode === 'sit' ? 1.95 : 1.9, 0));
+    per.obj.add(per.bubbleTag);
+  }
+  if (per.bubbleTag) {
+    per.bubbleTag.visible = !!per.actor.bubble;
+    if (per.actor.bubble) {
+      per.bubbleTag.position.y = per.walker ? 2.15 : per.actor.mode === 'sit' ? 1.95 : 1.9;
+      if (per.bubbleTag.element.textContent !== per.actor.bubble) per.bubbleTag.element.textContent = per.actor.bubble;
+    }
+  }
+}
 const clock = new THREE.Timer();
 const tmp = new THREE.Vector3();
 function tick() {
@@ -567,6 +650,7 @@ function tick() {
     controls.target.lerpVectors(f.t0, f.t1, k);
     if (f.t >= 1) state.flying = null;
   }
+  updateWhere(dt);
   if (marker.visible) { marker.userData.t -= dt; marker.material.opacity = Math.max(0, marker.userData.t) * 0.7; if (marker.userData.t <= 0) marker.visible = false; }
   for (const p of persons) {
     if (p.controlled || p.nav) { updateNav(p, dt); continue; }
@@ -577,6 +661,7 @@ function tick() {
     p.obj.position.copy(p.walker.pos);
     p.obj.rotation.y = Math.atan2(-p.walker.dir.z, p.walker.dir.x);
   }
+  for (const p of persons) updateBubble(p);
   if (state.follow) {
     const w = state.follow.obj.position;
     tmp.set(w.x, 1.0, w.z);
@@ -595,13 +680,35 @@ function tick() {
   const near = dist < 90 && state.ready && !state.intro;
   facilityLabels.visible = near && above;
   roomLabels.visible = near && state.showNames;
+  game?.update(dt, { visible: near });
   for (const p of persons) {
     p.tag.visible = near && state.showNames && (!p.tag.userData.onlyWhenPicked || p.tag.userData.picked);
   }
   renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
-  requestAnimationFrame(tick);
+  if (!tick.manual) requestAnimationFrame(tick);
 }
+// 확인용: 창이 숨겨져 있어도 한 프레임을 직접 그린다(애니메이션 루프는 건드리지 않음)
+function stepOnce(n = 1) { tick.manual = true; for (let i = 0; i < n; i++) tick(); tick.manual = false; }
+
+// ------------------------------------------------------------------ 사무실 생활(임무·출석·칭찬·꾸미기)
+let game = null;
+// 상점 소품 사진(한 번만 그려 두고 렌더러는 닫는다)
+const thumbs = (() => {
+  try {
+    const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    r.setPixelRatio(1); r.setSize(120, 120); r.toneMapping = renderer.toneMapping; r.toneMappingExposure = renderer.toneMappingExposure;
+    const t = propThumbnails(r, (shopData.items || []).map((x) => x.item));
+    r.dispose(); r.forceContextLoss();
+    return t;
+  } catch (e) { console.warn('소품 사진 실패', e); return {}; }
+})();
+game = await initGame({
+  scene, label, P, nav, persons, ctrl, goTo, startControl, setDesk,
+  lookAt: (x, z) => flyTo(P(x + 1.2, z + 2.6, 5.8), P(x, z, 0.5), 1.0),
+  missions: missionData.missions || [], shop: (shopData.items || []).map((x) => ({ ...x, img: thumbs[x.item] })),
+  deskItems: (n) => deskItems[n] || [],
+}).catch((e) => { console.warn('생활 기능 초기화 실패', e); return null; });
 
 // ------------------------------------------------------------------ start
 camera.position.copy(VIEW_CITY.pos);
@@ -613,4 +720,4 @@ state.intro = true;
 $('#loading').classList.add('done');
 tick();
 setTimeout(() => { flyTo(VIEW_DOLL.pos, VIEW_DOLL.target, 4.5); setTimeout(() => { state.intro = false; }, 3800); }, 600);
-window.__office = { scene, camera, controls, flyTo, setMode, persons, P, startControl, endControl, goTo, nav };
+window.__office = { scene, camera, controls, flyTo, setMode, persons, P, startControl, endControl, goTo, nav, stepOnce, game };

@@ -1,0 +1,39 @@
+{
+ "_설명": "내 자리 꾸미기 상점. item은 web/desk_props.js 의 소품 이름, price는 별 개수, cat은 상점에서 묶어 보여 줄 갈래.",
+ "items": [
+  {"item": "coffee", "name": "테이크아웃 커피", "price": 1, "cat": "음료·간식"},
+  {"item": "candy", "name": "사탕 병", "price": 2, "cat": "음료·간식"},
+  {"item": "mug", "name": "머그잔", "price": 3, "cat": "음료·간식"},
+  {"item": "tumbler", "name": "텀블러", "price": 4, "cat": "음료·간식"},
+  {"item": "basket", "name": "간식 바구니", "price": 5, "cat": "음료·간식"},
+
+  {"item": "tissue", "name": "티슈", "price": 1, "cat": "사무용품"},
+  {"item": "pencils", "name": "연필꽂이", "price": 2, "cat": "사무용품"},
+  {"item": "calendar", "name": "탁상 달력", "price": 2, "cat": "사무용품"},
+  {"item": "nameplate", "name": "이름패", "price": 3, "cat": "사무용품"},
+  {"item": "mousepad", "name": "별무늬 마우스패드", "price": 3, "cat": "사무용품"},
+  {"item": "clock", "name": "탁상시계", "price": 5, "cat": "사무용품"},
+
+  {"item": "succulent", "name": "다육이", "price": 3, "cat": "식물"},
+  {"item": "cactus", "name": "꽃 핀 선인장", "price": 4, "cat": "식물"},
+  {"item": "flowers", "name": "꽃병", "price": 6, "cat": "식물"},
+
+  {"item": "duck", "name": "오리 인형", "price": 5, "cat": "인형"},
+  {"item": "bear", "name": "곰 인형", "price": 6, "cat": "인형"},
+  {"item": "cat", "name": "고양이 인형", "price": 6, "cat": "인형"},
+
+  {"item": "cube", "name": "큐브 퍼즐", "price": 3, "cat": "장식·조명"},
+  {"item": "hourglass", "name": "모래시계", "price": 5, "cat": "장식·조명"},
+  {"item": "frame", "name": "그림 액자", "price": 5, "cat": "장식·조명"},
+  {"item": "fan", "name": "미니 선풍기", "price": 6, "cat": "장식·조명"},
+  {"item": "moodlamp", "name": "무드등", "price": 8, "cat": "장식·조명"},
+  {"item": "headphones", "name": "헤드폰 거치대", "price": 8, "cat": "장식·조명"},
+  {"item": "lamp", "name": "책상 스탠드", "price": 10, "cat": "장식·조명"},
+  {"item": "globe", "name": "지구본", "price": 12, "cat": "장식·조명"},
+
+  {"item": "books", "name": "법전 더미", "price": 4, "cat": "법률 소품"},
+  {"item": "gavel", "name": "의사봉", "price": 10, "cat": "법률 소품"},
+  {"item": "scales", "name": "정의의 저울", "price": 15, "cat": "법률 소품"},
+  {"item": "trophy", "name": "칭찬왕 트로피", "price": 20, "cat": "특별"}
+ ]
+}

@@ -20,7 +20,7 @@
   {"name": "이보람", "seat": "P7_B2", "look": {"hair": "side", "inner": "shirt", "innerColor": "#f4f4f2"}},
   {"name": "조유정", "seat": "P7_B3", "look": {"hair": "long", "inner": "knit", "innerColor": "#8a7a68"}},
   {"name": "김영주", "seat": "O_TR_W", "look": {"hair": "short", "suit": "#1d2027", "tie": "#5a7090"}},
-  {"name": "윤제선", "seat": "O_BR_E", "look": {"hair": "short", "suit": "#2b2f36", "tie": "#4a4d55"}},
+  {"name": "윤제선", "seat": "O_BR_E", "look": {"hair": "short", "suit": "#2b2f36", "tie": "#4a4d55"}, "desk": ["mousepad", "basket", "pencils", "calendar", "mug", "tumbler", "coffee", "headphones", "bear", "tissue", "nameplate"]},
   {"name": "박주현", "seat": "O_BR_W", "look": {"hair": "side", "suit": "#1c1f26", "tie": "#4d7473"}},
   {"name": "김종훈", "seat": "O_TL_W", "look": {"hair": "short", "glasses": "round", "suit": "#1f2a44", "tie": "#3d6fb6"}},
   {"name": "박경석", "seat": "O_BL_W", "look": {"hair": "side", "suit": "#243556", "tie": "#b39aa4"}}
